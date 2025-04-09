@@ -11,6 +11,7 @@ import collections
 import threading
 import time
 from faster_whisper import WhisperModel
+import whisper
 import soundfile as sf
 
 # Constants
@@ -91,18 +92,19 @@ class VoiceProcessor(QThread):
         self.queue = queue.Queue()
         self.callback = callback
         self.running = True
-        self.model = WhisperModel("base", compute_type="int8", device="cpu")
-
+        self.model = whisper.load_model("base")  # you can change to "tiny", "small", "medium", "large" if needed
 
     def run(self):
         while self.running:
             try:
                 file_path = self.queue.get(timeout=0.5)
-                segments, _ = self.model.transcribe(file_path)
-                text = ' '.join([seg.text for seg in segments])
+                result = self.model.transcribe(file_path)
+                text = result.get("text", "")
                 self.callback(f"Transcribed [{file_path}]: {text}")
             except queue.Empty:
                 continue
+            except Exception as e:
+                self.callback(f"Transcription error for {file_path}: {str(e)}")
 
     def add_file(self, path):
         self.queue.put(path)
