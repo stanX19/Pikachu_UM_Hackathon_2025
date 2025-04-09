@@ -8,6 +8,9 @@ from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QMe
 from PyQt5.QtCore import QThread, pyqtSignal, QObject
 import webrtcvad
 import collections
+import threading
+import time
+from faster_whisper import WhisperModel
 import soundfile as sf
 
 # Constants
@@ -88,26 +91,18 @@ class VoiceProcessor(QThread):
         self.queue = queue.Queue()
         self.callback = callback
         self.running = True
+        self.model = WhisperModel("base", compute_type="int8", device="cpu")
+
 
     def run(self):
         while self.running:
             try:
                 file_path = self.queue.get(timeout=0.5)
-                # insert model here
-                text = file_path
-                self.callback(text)
+                segments, _ = self.model.transcribe(file_path)
+                text = ' '.join([seg.text for seg in segments])
+                self.callback(f"Transcribed [{file_path}]: {text}")
             except queue.Empty:
                 continue
-
-    def process_audio(self, file_path):
-        try:
-            audio, sr = sf.read(file_path)
-            if sr != 16000:
-                raise ValueError("Only 16kHz sample rate is supported")
-            result = self.model(audio)
-            return f"Transcribed [{file_path}]: {result}"
-        except Exception as e:
-            return f"Failed to process {file_path}: {e}"
 
     def add_file(self, path):
         self.queue.put(path)
