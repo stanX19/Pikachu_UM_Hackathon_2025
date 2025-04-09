@@ -3,6 +3,7 @@ import os
 import queue
 import numpy as np
 import sounddevice as sd
+from onnxruntime.capi.onnxruntime_pybind11_state import RuntimeException
 from scipy.io.wavfile import write
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QMessageBox
 from PyQt5.QtCore import QThread, pyqtSignal, QObject
@@ -17,8 +18,8 @@ import soundfile as sf
 # Constants
 SAVE_DIR = './data'
 os.makedirs(SAVE_DIR, exist_ok=True)
-SAMPLE_RATE = 16000
-FRAME_DURATION = 30  # ms
+SAMPLE_RATE = 32000
+FRAME_DURATION = 30  # ms, can only be 10, 20 or 30
 FRAME_SIZE = int(SAMPLE_RATE * FRAME_DURATION / 1000)
 SILENCE_TIMEOUT = 1.0  # seconds
 
@@ -84,7 +85,7 @@ class VADRecorder(QThread):
                 self.finished.emit("No speech detected")
 
         except Exception as e:
-            self.finished.emit(f"Error: {str(e)}")
+            self.finished.emit(RuntimeException(f"Sound recording failed: {e}"))
 
 class VoiceProcessor(QThread):
     def __init__(self, callback):
@@ -92,10 +93,11 @@ class VoiceProcessor(QThread):
         self.queue = queue.Queue()
         self.callback = callback
         self.running = True
-        self.model = whisper.load_model("base")  # you can change to "tiny", "small", "medium", "large" if needed
+        self.model = whisper.load_model("base")  # "base" / "turbo"
 
     def run(self):
         while self.running:
+            file_path = "[Unknown File]"
             try:
                 file_path = self.queue.get(timeout=0.5)
                 result = self.model.transcribe(file_path)
@@ -155,8 +157,8 @@ class AudioRecorderApp(QWidget):
         self.thread.start()
 
     def on_recording_finished(self, result):
-        if result.startswith("Error"):
-            QMessageBox.critical(self, "Error", result)
+        if isinstance(result, BaseException):
+            QMessageBox.critical(self, "Error", result.__str__())
             self.recording = False
             self.record_button.setText("Voice Mode")
         elif result == "No speech detected":
