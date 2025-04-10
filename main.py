@@ -27,13 +27,6 @@ VAD_AGGRESSIVENESS = 3  # 0-3, higher means more aggressive filtering
 
 # Voice command constants
 COMMAND_TIMEOUT = 5  # seconds to listen for a command
-COMMAND_VOCABULARY = {
-    "start recording": "start_recording",
-    "stop recording": "stop_recording",
-    "switch to normal": "switch_to_normal",
-    "switch to voice": "switch_to_voice",
-    "exit": "exit_app"
-}
 
 
 class LightColorPalette:
@@ -131,10 +124,10 @@ class IntentPredictor:
 
     # Define intents and their keywords/phrases
     INTENTS = {
-        "navigation": ["navigate", "navigation", "directions", "map", "route", "go to", "take me to"],
+        "navigation": ["navigate", "navigation", "directions", "map", "route", "go to", "take me", "bring me"],
         "accept_order": ["accept", "order", "pickup", "pick up", "new job", "new ride", "new customer"],
-        "chat_passenger": ["chat", "message", "talk", "passenger", "customer", "client", "text"],
-        "fetched_passenger": ["fetched", "picked up", "got passenger", "passenger on board", "customer inside"],
+        "chat_passenger": ["chat", "message", "talk", "passenger", "customer", "client", "text", "say"],
+        "fetched_passenger": ["fetched", "picked up", "got passenger", "passenger on board", "customer inside", "pick"],
         "exit_voice_mode": ["exit", "quit", "leave", "stop", "normal mode", "voice off"],
         "unknown": []  # Fallback intent
     }
@@ -457,7 +450,7 @@ class VoiceControlPrototypeApp(QWidget):
         # Voice mode button (below the grid)
         self.toggle_button = QPushButton("Voice\nMode")
         self.toggle_button.setFixedSize(80, 80)
-        self.toggle_button.clicked.connect(self.toggle_recording)
+        self.toggle_button.clicked.connect(self.toggle_voice_mode)
 
         btn_layout = QHBoxLayout()
         btn_layout.addStretch()
@@ -482,6 +475,32 @@ class VoiceControlPrototypeApp(QWidget):
         self.main_layout.addWidget(self.intent_label)
 
         self.setLayout(self.main_layout)
+
+    def enter_voice_mode(self):
+        """Enter voice mode - start listening and change theme."""
+        if not self.recording:
+            self.recording = True
+            self.update_toggle_button_state()
+            self.status_label.setText("Listening for speech...")
+            self.apply_theme(self.voice_theme)
+            self.record_next()
+
+    def exit_voice_mode(self):
+        """Exit voice mode - stop listening and restore normal theme."""
+        if self.recording:
+            self.recording = False
+            self.update_toggle_button_state()
+            self.status_label.setText("Voice mode exited")
+            self.apply_theme(self.normal_theme)
+            if self.recorder_thread and self.recorder_thread.isRunning():
+                self.recorder_thread.stop()
+
+    def toggle_voice_mode(self):
+        """Toggle between voice mode and normal mode."""
+        if not self.recording:
+            self.enter_voice_mode()
+        else:
+            self.exit_voice_mode()
 
     def apply_theme(self, theme):
         """Apply the selected theme to all UI elements."""
@@ -598,31 +617,14 @@ class VoiceControlPrototypeApp(QWidget):
         self.transcription_processor.transcription_error.connect(self.on_transcription_error)
         self.transcription_processor.start()
 
-    def toggle_recording(self):
-        """Toggle the recording state using the AudioRecorder."""
+    def record_next(self):
+        """Initiate the next audio recording session using AudioRecorder."""
         if not self.recording:
-            self.start_recording()
-            # Apply voice theme
-            self.apply_theme(self.voice_theme)
-        else:
-            self.stop_recording()
-            # Apply normal theme
-            self.apply_theme(self.normal_theme)
+            return
 
-    def start_recording(self):
-        """Begin recording speech using AudioRecorder."""
-        self.recording = True
-        self.update_toggle_button_state()
-        self.status_label.setText("Listening for speech...")
-        self.record_next()
-
-    def stop_recording(self):
-        """Stop recording speech."""
-        self.recording = False
-        self.update_toggle_button_state()
-        self.status_label.setText("Listening stopped")
-        if self.recorder_thread and self.recorder_thread.isRunning():
-            self.recorder_thread.stop()
+        self.recorder_thread = AudioRecorder(self.file_counter)
+        self.recorder_thread.finished.connect(self.on_recording_finished)
+        self.recorder_thread.start()
 
     def update_toggle_button_state(self):
         """Update the toggle button appearance based on the recording state."""
@@ -659,20 +661,11 @@ class VoiceControlPrototypeApp(QWidget):
             """
             self.toggle_button.setStyleSheet(voice_btn_style)
 
-    def record_next(self):
-        """Initiate the next audio recording session using AudioRecorder."""
-        if not self.recording:
-            return
-
-        self.recorder_thread = AudioRecorder(self.file_counter)
-        self.recorder_thread.finished.connect(self.on_recording_finished)
-        self.recorder_thread.start()
-
     def on_recording_finished(self, result):
         """Callback when an audio recording is finished."""
         if isinstance(result, Exception):
             QMessageBox.critical(self, "Error", str(result))
-            self.stop_recording()
+            self.exit_voice_mode()
         elif result == "No speech detected":
             self.status_label.setText("No speech detected, listening again...")
             if self.recording:
@@ -695,6 +688,10 @@ class VoiceControlPrototypeApp(QWidget):
         # Predict intent from the transcription
         intent = IntentPredictor.predict_intent(text)
         self.intent_label.setText(f"Intent: {intent}")
+
+        # Process voice commands to exit voice mode
+        if intent == "exit_voice_mode" or "exit" in text.lower() or "normal mode" in text.lower():
+            self.exit_voice_mode()
 
         # Print both transcription and intent prediction
         print(f"Transcribed [{file_name}]: {text}")
