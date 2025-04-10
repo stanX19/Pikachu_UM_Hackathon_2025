@@ -4,7 +4,7 @@ import queue
 import threading
 import collections
 import time
-from typing import Optional, Callable, List, Tuple
+from typing import Optional, Callable, List, Tuple, Dict, Any
 
 import numpy as np
 import sounddevice as sd
@@ -12,7 +12,7 @@ import webrtcvad
 import whisper
 from scipy.io.wavfile import write
 from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, QPushButton, QMessageBox,
-                             QLabel, QStackedLayout, QHBoxLayout, QSizePolicy, QFrame)
+                             QLabel, QStackedLayout, QHBoxLayout, QSizePolicy, QFrame, QGridLayout)
 from PyQt5.QtCore import QThread, pyqtSignal, Qt, QSize, QTimer
 from PyQt5.QtGui import QFont, QIcon
 
@@ -34,6 +34,137 @@ COMMAND_VOCABULARY = {
     "switch to voice": "switch_to_voice",
     "exit": "exit_app"
 }
+
+
+class LightColorPalette:
+    """Light theme color palette for the application."""
+
+    # Base colors
+    background = "#FFFFFF"
+    text_primary = "#333333"
+    text_secondary = "#666666"
+
+    # Button colors
+    button_1 = "#2196F3"  # Nav button
+    button_2 = "#4CAF50"  # Accept button
+    button_3 = "#FF9800"  # Chat button
+    button_4 = "#E91E63"  # Fetched button
+    voice_button = "#673AB7"
+    voice_button_hover = "#5E35B1"
+
+    # Helper method to get button colors as a dict
+    @classmethod
+    def get_button_colors(cls) -> Dict[str, str]:
+        return {
+            "button_1": cls.button_1,
+            "button_2": cls.button_2,
+            "button_3": cls.button_3,
+            "button_4": cls.button_4,
+            "voice_button": cls.voice_button,
+            "voice_button_hover": cls.voice_button_hover
+        }
+
+    # Helper method to get all theme colors as a dict
+    @classmethod
+    def get_theme(cls) -> Dict[str, str]:
+        return {
+            "app_bg": cls.background,
+            "title_color": cls.text_primary,
+            "nav_btn": cls.button_1,
+            "accept_btn": cls.button_2,
+            "chat_btn": cls.button_3,
+            "fetched_btn": cls.button_4,
+            "voice_btn_bg": cls.voice_button,
+            "voice_btn_hover": cls.voice_button_hover,
+            "status_color": cls.text_primary,
+            "transcription_color": cls.text_secondary
+        }
+
+
+class DarkColorPalette:
+    """Dark theme color palette for the application."""
+
+    # Base colors
+    background = "#1E1E2E"
+    text_primary = "#E2E8F0"
+    text_secondary = "#CBD5E1"
+
+    # Button colors
+    button_1 = "#3B82F6"  # Nav button
+    button_2 = "#10B981"  # Accept button
+    button_3 = "#F59E0B"  # Chat button
+    button_4 = "#EC4899"  # Fetched button
+    voice_button = "#EF4444"
+    voice_button_hover = "#DC2626"
+
+    # Helper method to get button colors as a dict
+    @classmethod
+    def get_button_colors(cls) -> Dict[str, str]:
+        return {
+            "button_1": cls.button_1,
+            "button_2": cls.button_2,
+            "button_3": cls.button_3,
+            "button_4": cls.button_4,
+            "voice_button": cls.voice_button,
+            "voice_button_hover": cls.voice_button_hover
+        }
+
+    # Helper method to get all theme colors as a dict
+    @classmethod
+    def get_theme(cls) -> Dict[str, str]:
+        return {
+            "app_bg": cls.background,
+            "title_color": cls.text_primary,
+            "nav_btn": cls.button_1,
+            "accept_btn": cls.button_2,
+            "chat_btn": cls.button_3,
+            "fetched_btn": cls.button_4,
+            "voice_btn_bg": cls.voice_button,
+            "voice_btn_hover": cls.voice_button_hover,
+            "status_color": cls.text_primary,
+            "transcription_color": cls.text_secondary
+        }
+
+
+class IntentPredictor:
+    """Predicts intent from transcribed speech text."""
+
+    # Define intents and their keywords/phrases
+    INTENTS = {
+        "navigation": ["navigate", "navigation", "directions", "map", "route", "go to", "take me to"],
+        "accept_order": ["accept", "order", "pickup", "pick up", "new job", "new ride", "new customer"],
+        "chat_passenger": ["chat", "message", "talk", "passenger", "customer", "client", "text"],
+        "fetched_passenger": ["fetched", "picked up", "got passenger", "passenger on board", "customer inside"],
+        "exit_voice_mode": ["exit", "quit", "leave", "stop", "normal mode", "voice off"],
+        "unknown": []  # Fallback intent
+    }
+
+    @classmethod
+    def predict_intent(cls, text: str) -> str:
+        """
+        Predict the intent from the transcribed text.
+
+        Args:
+            text: The transcribed text from speech recognition
+
+        Returns:
+            The predicted intent as a string
+        """
+        text = text.lower()
+        best_intent = "unknown"
+        max_matches = 0
+
+        # Check each intent for keyword matches
+        for intent, keywords in cls.INTENTS.items():
+            if intent == "unknown":
+                continue
+
+            matches = sum(1 for keyword in keywords if keyword in text)
+            if matches > max_matches:
+                max_matches = matches
+                best_intent = intent
+
+        return best_intent
 
 
 class AudioUtils:
@@ -186,133 +317,10 @@ class AudioRecorder(QThread):
             self.finished.emit(Exception(f"Error saving audio: {str(e)}"))
 
 
-class CommandListener(QThread):
-    """Listens for voice commands in voice control mode."""
-
-    command_detected = pyqtSignal(str)  # Emits command name when detected
-    listening_status = pyqtSignal(str)  # Updates listening status
-
-    def __init__(self, transcription_engine):
-        super().__init__()
-        self.running = True
-        self.transcription_engine = transcription_engine
-        self.vad = VoiceActivityDetector()
-        self.audio_queue = queue.Queue()
-
-    def callback(self, indata, frames, time, status):
-        """Callback for sounddevice InputStream."""
-        if status:
-            print(f"Stream status: {status}", file=sys.stderr)
-        self.audio_queue.put(bytes(indata))
-
-    def stop(self):
-        """Stop the command listener."""
-        self.running = False
-
-    def run(self):
-        """Listen for voice commands."""
-        try:
-            with sd.RawInputStream(
-                    samplerate=SAMPLE_RATE,
-                    blocksize=FRAME_SIZE,
-                    dtype='int16',
-                    channels=1,
-                    callback=self.callback
-            ):
-                while self.running:
-                    self._listen_for_command()
-
-        except Exception as e:
-            print(f"Command listening failed: {str(e)}")
-
-    def _listen_for_command(self):
-        """Listen for a single command."""
-        self.listening_status.emit("Listening for command...")
-
-        silent_chunks = 0
-        voiced_chunks = 0
-        collected_frames = []
-        is_speech_frames = []
-        max_silence_chunks = int(SILENCE_TIMEOUT * 1000 / FRAME_DURATION)
-        max_command_chunks = int(COMMAND_TIMEOUT * 1000 / FRAME_DURATION)
-        total_chunks = 0
-
-        speech_started = False
-
-        # Clear the queue
-        while not self.audio_queue.empty():
-            self.audio_queue.get()
-
-        while self.running:
-            try:
-                frame = self.audio_queue.get(timeout=0.5)
-            except queue.Empty:
-                continue
-
-            is_speech = self.vad.is_speech(frame, SAMPLE_RATE)
-            is_speech_frames.append(is_speech)
-            collected_frames.append(frame)
-            total_chunks += 1
-
-            if is_speech:
-                if not speech_started:
-                    self.listening_status.emit("Speech detected, processing...")
-                    speech_started = True
-                silent_chunks = 0
-                voiced_chunks += 1
-            else:
-                silent_chunks += 1
-
-            # If we've detected speech and then sufficient silence, process command
-            if voiced_chunks > 5 and silent_chunks > max_silence_chunks:
-                break
-
-            # If we've been listening too long, time out
-            if total_chunks > max_command_chunks:
-                if voiced_chunks <= 5:
-                    self.listening_status.emit("No command detected")
-                    return
-                break
-
-        if voiced_chunks <= 5:
-            self.listening_status.emit("No command detected")
-            return
-
-        try:
-            # Convert to numpy array and trim silence
-            audio_data = b''.join(collected_frames)
-            audio_np = np.frombuffer(audio_data, dtype='int16')
-            trimmed_audio = AudioUtils.trim_silence(audio_np, is_speech_frames)
-
-            # Save temporarily
-            temp_file = os.path.join(SAVE_DIR, "temp_command.wav")
-            write(temp_file, SAMPLE_RATE, trimmed_audio)
-
-            # Transcribe
-            self.listening_status.emit("Processing command...")
-            text = self.transcription_engine.transcribe(temp_file).lower()
-
-            # Find matching command
-            matched_command = None
-            for phrase, command in COMMAND_VOCABULARY.items():
-                if phrase in text:
-                    matched_command = command
-                    break
-
-            if matched_command:
-                self.listening_status.emit(f"Command recognized: {matched_command}")
-                self.command_detected.emit(matched_command)
-            else:
-                self.listening_status.emit(f"Unknown command: '{text}'")
-
-        except Exception as e:
-            self.listening_status.emit(f"Command processing error: {str(e)}")
-
-
 class TranscriptionEngine:
     """Handles speech-to-text transcription using Whisper."""
 
-    def __init__(self, model_name: str = "base"):
+    def __init__(self, model_name: str = "base.en"):
         """Initialize the transcription engine with the specified model."""
         self.model = None
         self.model_name = model_name
@@ -377,17 +385,6 @@ class TranscriptionProcessor(QThread):
                 self.transcription_error.emit(file_name, str(e))
 
 
-import os
-import sys
-from PyQt5.QtCore import Qt, QTimer
-from PyQt5.QtWidgets import (
-    QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QFrame, QMessageBox
-)
-
-
-# Assume these utility classes are defined/imported from your project:
-# AudioUtils, TranscriptionProcessor, and AudioRecorder.
-
 class VoiceControlPrototypeApp(QWidget):
     """Main application window for the voice-based control prototype."""
 
@@ -399,63 +396,200 @@ class VoiceControlPrototypeApp(QWidget):
         self.recording = False
         self.recorder_thread = None
 
+        # Define light and dark themes using our palette classes
+        self.normal_theme = LightColorPalette.get_theme()
+        self.voice_theme = DarkColorPalette.get_theme()
+        self.current_theme = self.normal_theme
+
         self._setup_ui()
         self._setup_transcription_engine()
+        self.apply_theme(self.normal_theme)
 
     def _setup_ui(self):
         """Set up the user interface for the voice control prototype."""
-        self.setWindowTitle("Voice Control Prototype")
+        self.setWindowTitle("Driver App")
+        # self.setWindowFlag(Qt.FramelessWindowHint)
 
         # Set fixed size with Android portrait (9:16) aspect ratio.
         base_width = 360
         self.setFixedSize(base_width, int(base_width * 16 / 9))
 
-        main_layout = QVBoxLayout()
-        main_layout.setContentsMargins(20, 40, 20, 20)
-        main_layout.setSpacing(20)
+        self.main_layout = QVBoxLayout()
+        self.main_layout.setContentsMargins(20, 20, 20, 20)
+        self.main_layout.setSpacing(15)
 
         # Title label
-        title_label = QLabel("Voice Control Prototype")
-        title_label.setAlignment(Qt.AlignCenter)
-        title_label.setStyleSheet("font-size: 24px; font-weight: bold; color: #333333;")
-        main_layout.addWidget(title_label)
+        self.title_label = QLabel("Driver Assistant")
+        self.title_label.setAlignment(Qt.AlignCenter)
+        self.title_label.setStyleSheet("font-size: 24px; font-weight: bold;")
+        self.main_layout.addWidget(self.title_label)
 
-        # Toggle button for listening (recording) using the AudioRecorder.
+        # 2x2 Grid of buttons
+        grid_layout = QGridLayout()
+        grid_layout.setSpacing(10)
+
+        # Create the 2x2 grid buttons with square borders and rounded corners
+        self.nav_button = QPushButton("Navigation")
+        self.accept_button = QPushButton("Accept\nOrder")
+        self.chat_button = QPushButton("Chat with\nPassenger")
+        self.fetched_button = QPushButton("Fetched\nPassenger")
+
+        # Configure button styles (initial - will be updated by theme)
+        self.grid_buttons = [self.nav_button, self.accept_button, self.chat_button, self.fetched_button]
+        for btn in self.grid_buttons:
+            btn.setMinimumHeight(120)
+            btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+        # Connect button clicks
+        self.nav_button.clicked.connect(lambda: self.button_clicked("Navigation"))
+        self.accept_button.clicked.connect(lambda: self.button_clicked("Accept Order"))
+        self.chat_button.clicked.connect(lambda: self.button_clicked("Chat with Passenger"))
+        self.fetched_button.clicked.connect(lambda: self.button_clicked("Fetched Passenger"))
+
+        # Add buttons to the grid
+        grid_layout.addWidget(self.nav_button, 0, 0)
+        grid_layout.addWidget(self.accept_button, 0, 1)
+        grid_layout.addWidget(self.chat_button, 1, 0)
+        grid_layout.addWidget(self.fetched_button, 1, 1)
+
+        self.main_layout.addLayout(grid_layout)
+
+        # Voice mode button (below the grid)
         self.toggle_button = QPushButton("Voice\nMode")
         self.toggle_button.setFixedSize(80, 80)
-        self.toggle_button.setStyleSheet("""
-            QPushButton { 
-                border-radius: 40px; 
-                background-color: #4CAF50;
-                color: white;
-                font-size: 16px;
-            }
-            QPushButton:hover {
-                background-color: #45a049;
-            }
-        """)
         self.toggle_button.clicked.connect(self.toggle_recording)
 
         btn_layout = QHBoxLayout()
         btn_layout.addStretch()
         btn_layout.addWidget(self.toggle_button)
         btn_layout.addStretch()
-        main_layout.addLayout(btn_layout)
+        self.main_layout.addLayout(btn_layout)
 
         # Status area
         self.status_label = QLabel("Ready")
         self.status_label.setAlignment(Qt.AlignCenter)
-        self.status_label.setStyleSheet("font-size: 14px; color: #333333;")
-        main_layout.addWidget(self.status_label)
+        self.main_layout.addWidget(self.status_label)
 
         # Transcription result label
         self.transcription_label = QLabel("Transcription will appear here")
         self.transcription_label.setAlignment(Qt.AlignCenter)
         self.transcription_label.setWordWrap(True)
-        self.transcription_label.setStyleSheet("font-size: 12px; color: #666666; padding: 10px;")
-        main_layout.addWidget(self.transcription_label)
+        self.main_layout.addWidget(self.transcription_label)
 
-        self.setLayout(main_layout)
+        # Intent prediction label (new)
+        self.intent_label = QLabel("Intent: None")
+        self.intent_label.setAlignment(Qt.AlignCenter)
+        self.main_layout.addWidget(self.intent_label)
+
+        self.setLayout(self.main_layout)
+
+    def apply_theme(self, theme):
+        """Apply the selected theme to all UI elements."""
+        self.current_theme = theme
+
+        # Apply background color to the app
+        self.setStyleSheet(f"background-color: {theme['app_bg']};")
+
+        # Apply colors to title
+        self.title_label.setStyleSheet(f"font-size: 24px; font-weight: bold; color: {theme['title_color']};")
+
+        # Apply colors to grid buttons
+        button_style_template = """
+            QPushButton {{
+                background-color: {color};
+                color: white;
+                font-size: 16px;
+                font-weight: bold;
+                border: 3px solid {border_color};
+                border-radius: 15px;
+                padding: 10px;
+            }}
+            QPushButton:hover {{
+                background-color: {hover_color};
+            }}
+        """
+
+        # Apply styles to each button
+        self.nav_button.setStyleSheet(button_style_template.format(
+            color=theme["nav_btn"],
+            border_color=self.darken_color(theme["nav_btn"]),
+            hover_color=self.lighten_color(theme["nav_btn"])
+        ))
+
+        self.accept_button.setStyleSheet(button_style_template.format(
+            color=theme["accept_btn"],
+            border_color=self.darken_color(theme["accept_btn"]),
+            hover_color=self.lighten_color(theme["accept_btn"])
+        ))
+
+        self.chat_button.setStyleSheet(button_style_template.format(
+            color=theme["chat_btn"],
+            border_color=self.darken_color(theme["chat_btn"]),
+            hover_color=self.lighten_color(theme["chat_btn"])
+        ))
+
+        self.fetched_button.setStyleSheet(button_style_template.format(
+            color=theme["fetched_btn"],
+            border_color=self.darken_color(theme["fetched_btn"]),
+            hover_color=self.lighten_color(theme["fetched_btn"])
+        ))
+
+        # Apply style to voice button
+        voice_btn_style = f"""
+            QPushButton {{ 
+                border-radius: 40px; 
+                background-color: {theme['voice_btn_bg']};
+                color: white;
+                font-size: 16px;
+                font-weight: bold;
+                border: 3px solid {self.darken_color(theme['voice_btn_bg'])};
+            }}
+            QPushButton:hover {{
+                background-color: {theme['voice_btn_hover']};
+            }}
+        """
+        self.toggle_button.setStyleSheet(voice_btn_style)
+
+        # Apply colors to status and transcription labels
+        self.status_label.setStyleSheet(f"font-size: 14px; color: {theme['status_color']};")
+        self.transcription_label.setStyleSheet(
+            f"font-size: 12px; color: {theme['transcription_color']}; padding: 10px;")
+        self.intent_label.setStyleSheet(
+            f"font-size: 12px; color: {theme['transcription_color']}; padding: 5px;")
+
+    def lighten_color(self, hex_color, amount=0.2):
+        """Lighten a hex color by a specified amount."""
+        # Convert hex to RGB
+        hex_color = hex_color.lstrip('#')
+        r, g, b = tuple(int(hex_color[i:i + 2], 16) for i in (0, 2, 4))
+
+        # Lighten
+        r = min(255, int(r + (255 - r) * amount))
+        g = min(255, int(g + (255 - g) * amount))
+        b = min(255, int(b + (255 - b) * amount))
+
+        # Convert back to hex
+        return f"#{r:02x}{g:02x}{b:02x}"
+
+    def darken_color(self, hex_color, amount=0.2):
+        """Darken a hex color by a specified amount."""
+        # Convert hex to RGB
+        hex_color = hex_color.lstrip('#')
+        r, g, b = tuple(int(hex_color[i:i + 2], 16) for i in (0, 2, 4))
+
+        # Darken
+        r = max(0, int(r * (1 - amount)))
+        g = max(0, int(g * (1 - amount)))
+        b = max(0, int(b * (1 - amount)))
+
+        # Convert back to hex
+        return f"#{r:02x}{g:02x}{b:02x}"
+
+    def button_clicked(self, button_name):
+        """Handle button clicks."""
+        self.status_label.setText(f"{button_name} clicked")
+        self.transcription_label.setText(f"You clicked: {button_name}")
+        print(f"Button clicked: {button_name}")
 
     def _setup_transcription_engine(self):
         """Set up the transcription engine for processing recordings."""
@@ -468,8 +602,12 @@ class VoiceControlPrototypeApp(QWidget):
         """Toggle the recording state using the AudioRecorder."""
         if not self.recording:
             self.start_recording()
+            # Apply voice theme
+            self.apply_theme(self.voice_theme)
         else:
             self.stop_recording()
+            # Apply normal theme
+            self.apply_theme(self.normal_theme)
 
     def start_recording(self):
         """Begin recording speech using AudioRecorder."""
@@ -489,31 +627,37 @@ class VoiceControlPrototypeApp(QWidget):
     def update_toggle_button_state(self):
         """Update the toggle button appearance based on the recording state."""
         if self.recording:
-            self.toggle_button.setText("Exit\nvoice\nmode")
-            self.toggle_button.setStyleSheet("""
-                QPushButton { 
+            self.toggle_button.setText("Exit\nVoice\nMode")
+            voice_btn_style = f"""
+                QPushButton {{ 
                     border-radius: 40px; 
-                    background-color: #f44336;
+                    background-color: {self.current_theme['voice_btn_bg']};
                     color: white;
                     font-size: 16px;
-                }
-                QPushButton:hover {
-                    background-color: #d32f2f;
-                }
-            """)
+                    font-weight: bold;
+                    border: 3px solid {self.darken_color(self.current_theme['voice_btn_bg'])};
+                }}
+                QPushButton:hover {{
+                    background-color: {self.current_theme['voice_btn_hover']};
+                }}
+            """
+            self.toggle_button.setStyleSheet(voice_btn_style)
         else:
-            self.toggle_button.setText("Voice\nmode")
-            self.toggle_button.setStyleSheet("""
-                QPushButton { 
+            self.toggle_button.setText("Voice\nMode")
+            voice_btn_style = f"""
+                QPushButton {{ 
                     border-radius: 40px; 
-                    background-color: #4CAF50;
+                    background-color: {self.current_theme['voice_btn_bg']};
                     color: white;
                     font-size: 16px;
-                }
-                QPushButton:hover {
-                    background-color: #45a049;
-                }
-            """)
+                    font-weight: bold;
+                    border: 3px solid {self.darken_color(self.current_theme['voice_btn_bg'])};
+                }}
+                QPushButton:hover {{
+                    background-color: {self.current_theme['voice_btn_hover']};
+                }}
+            """
+            self.toggle_button.setStyleSheet(voice_btn_style)
 
     def record_next(self):
         """Initiate the next audio recording session using AudioRecorder."""
@@ -543,11 +687,18 @@ class VoiceControlPrototypeApp(QWidget):
                 self.record_next()
 
     def on_transcription_ready(self, file_path, text):
-        """Display the transcription result for the recorded audio."""
+        """Display the transcription result and predict intent for the recorded audio."""
         file_name = os.path.basename(file_path)
         self.status_label.setText(f"Transcribed: {file_name}")
         self.transcription_label.setText(text)
+
+        # Predict intent from the transcription
+        intent = IntentPredictor.predict_intent(text)
+        self.intent_label.setText(f"Intent: {intent}")
+
+        # Print both transcription and intent prediction
         print(f"Transcribed [{file_name}]: {text}")
+        print(f"Predicted intent: {intent}")
 
     def on_transcription_error(self, file_path, error_msg):
         """Handle errors from the transcription engine."""
