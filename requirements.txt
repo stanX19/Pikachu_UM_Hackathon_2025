@@ -1,0 +1,10 @@
+gradio
+langchain
+langchain-community
+ollama
+openai-whisper
+edge-tts
+sounddevice
+numpy
+noisereduce
+langdetect

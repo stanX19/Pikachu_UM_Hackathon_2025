@@ -1,5 +1,4 @@
 import asyncio
-import os
 import edge_tts
 
 lang_map = {
