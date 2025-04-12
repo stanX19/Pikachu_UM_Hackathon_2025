@@ -23,7 +23,6 @@ UM Hackathon 2025 Prototype presented by team Pikachu
 - [🧠 Future Improvements](#-future-improvements)
 - [🎍 Preliminary judging slides](#preliminary-judging-slide)
 - [📸 Snapshots](#-snapshots)
-- [▶️ Demo Video](#-Demo-Video)
 - [📚 Citations & References](#-citations--references)
 
 
@@ -128,7 +127,7 @@ A short demo video is included to illustrate:
 - Multilingual feedback
 - UI transitions & safety logic
 
-[link to video]
+[DAX Assistant Demo Team Pikachu (UM Hackathon 2025)](https://www.youtube.com/watch?v=h32cmeKhhBU)
 
 ## 🚀 Getting Started
 
@@ -219,10 +218,6 @@ Transcribed [recorded_audio_2.wav]: 翻回主界面
 “好的，正在返回主界面。”
 Predicted intent: back
 ```
-
-## ▶️ Demo Video
-
-[DAX Assistant Demo Team Pikachu (UM Hackathon 2025)](https://www.youtube.com/watch?v=h32cmeKhhBU)
 
 ## 📚 Citations & References
 
