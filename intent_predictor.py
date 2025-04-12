@@ -15,7 +15,7 @@ class IntentPredictor:
         "fetched_passenger",
         "exit_voice_mode",
         "back",
-        "open"
+        "testing"
     ]
 
     system_prompts = {"English": f"""
@@ -182,7 +182,6 @@ class IntentPredictor:
             input_variables=["input"],
             template=cls.system_prompts[language]
         )
-        print(cls.system_prompts[language])
         prompt = prompt_template.format(input=text)
         return cls.llm.invoke(prompt)
 
