@@ -1,6 +1,6 @@
 # Grab DAX Voice Assistant – Handsfree AI Co-Pilot
 
-Prototype presented by team Pikachu
+UM Hackathon 2025 Prototype presented by team Pikachu
 
 ## 🧠 Overview
 
