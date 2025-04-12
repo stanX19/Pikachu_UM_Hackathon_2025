@@ -179,7 +179,7 @@ Predicted intent: back
 
 ## ▶️ Demo
 
-[DAX Assistant Demo Team Pikachu (UM Hackathon 2025).mp4](snapshots%2FDAX%20Assistant%20Demo%20Team%20Pikachu%20%28UM%20Hackathon%202025%29.mp4)
+[DAX Assistant Demo Team Pikachu (UM Hackathon 2025)](snapshots%2FDAX%20Assistant%20Demo%20Team%20Pikachu%20%28UM%20Hackathon%202025%29.webm)
 
 ## 📚 Citations & References
 
