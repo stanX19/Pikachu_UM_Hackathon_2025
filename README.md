@@ -2,6 +2,27 @@
 
 UM Hackathon 2025 Prototype presented by team Pikachu
 
+## 📚 Table of Contents
+
+- [🧠 Overview](#-overview)
+- [🎯 Problem Statement](#-problem-statement)
+- [✨ Features](#-features)
+- [🧩 Architecture](#-architecture)
+- [🏗️ Modules](#-modules)
+- [🧪 Key Technologies](#-key-technologies)
+- [🧠 AI Intelligence](#-ai-intelligence)
+- [🎥 Demo](#-demo)
+- [🚀 Getting Started](#-getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Setup](#setup)
+  - [Run the App](#run-the-app)
+- [🛡️ Safety & Ethics](#-safety--ethics)
+- [📂 Directory Structure](#-directory-structure)
+- [🧠 Future Improvements](#-future-improvements)
+- [📸 Snapshots](#-snapshots)
+- [📚 Citations & References](#-citations--references)
+
+
 ## 🧠 Overview
 
 This project is a **voice-controlled assistant prototype** designed for **Grab driver-partners (DAX)**, enabling **hands-free interactions** with the Grab platform. It empowers drivers with AI support in **noisy, real-world environments**, ensuring both **safety** and **productivity** on the road.
@@ -155,3 +176,59 @@ Transcribed [recorded_audio_2.wav]: 翻回主界面
 “好的，正在返回主界面。”
 Predicted intent: back
 ```
+
+## 📚 Citations & References
+
+This project builds upon a wide array of open-source tools, models, and libraries. We gratefully acknowledge the following:
+
+---
+
+- **Gemma** – Google's lightweight LLM (via Ollama)
+  > Google. *Gemma: Lightweight Open Models for Responsible AI*. 2024.  
+  [arXiv:2403.10600](https://arxiv.org/abs/2403.10600)
+
+- **Whisper** – Multilingual Speech Recognition by OpenAI  
+  > Radford et al. *Robust Speech Recognition via Large-Scale Weak Supervision*. 2022.  
+  [arXiv:2212.04356](https://arxiv.org/abs/2212.04356)
+
+- **DistilBERT** – Transformer for fallback zero-shot classification  
+  > Sanh, V., Debut, L., Chaumond, J., Wolf, T. *DistilBERT, a distilled version of BERT: smaller, faster, cheaper and lighter*. 2019.  
+  [arXiv:1910.01108](https://arxiv.org/abs/1910.01108)
+
+- **LangChain** – LLM orchestration framework  
+  > Harrison Chase et al. *LangChain: Building Applications with LLMs through Composability*. 2023.  
+  [https://github.com/langchain-ai/langchain](https://github.com/langchain-ai/langchain)
+
+- **LangDetect**  
+  > Nakatani, Shuyo. *Language Detection Library for Java (ported to Python)*. 2010.  
+  [https://github.com/Mimino666/langdetect](https://github.com/Mimino666/langdetect)
+
+- **PyQt5** – Qt GUI framework for Python  
+  > Riverbank Computing. *PyQt Documentation*.  
+  [https://www.riverbankcomputing.com/software/pyqt/intro](https://www.riverbankcomputing.com/software/pyqt/intro)
+
+- **WebRTC VAD**  
+  > Google WebRTC. *Voice Activity Detection (VAD)*.  
+  [https://webrtc.org](https://webrtc.org)
+
+- **noisereduce**  
+  > Tim Sainburg. *Noise reduction using spectral gating*. 2020.  
+  [GitHub](https://github.com/timsainb/noisereduce)
+
+- **SoundDevice**  
+  > Matthias Geier. *python-sounddevice: PortAudio bindings for Python*.  
+  [https://python-sounddevice.readthedocs.io](https://python-sounddevice.readthedocs.io)
+
+- **Edge-TTS**  
+  > Uses Microsoft Edge Neural Voices via unofficial API  
+  [GitHub](https://github.com/rany2/edge-tts)
+
+- **Pygame**  
+  > Pygame Community. *Pygame – Python Game Development*.  
+  [https://www.pygame.org](https://www.pygame.org)
+
+- **SciPy & NumPy**  
+  > Virtanen, P. et al. *SciPy 1.0: Fundamental Algorithms for Scientific Computing in Python*. 2020.  
+  [Nature Methods, 17, 261–272](https://www.nature.com/articles/s41592-019-0686-2)
+
+---
