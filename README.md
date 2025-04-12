@@ -133,6 +133,12 @@ srcs
 └── data/                     # Recorded audio + TTS outputs
 ```
 
+## 🎍Preliminary judging slide
+Below is pikachu team pitch slide
+
+[Click here]([https://example.com](https://www.canva.com/design/DAGkPnz2ny4/xnMEmnuYzi3iPQLp8Jgu3Q/edit?utm_content=DAGkPnz2ny4&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton))
+
+
 ## 🧠 Future Improvements
 
 - Next-Level Noise Reduction with Krisp API
