@@ -21,8 +21,9 @@ UM Hackathon 2025 Prototype presented by team Pikachu
 - [🛡️ Safety & Ethics](#-safety--ethics)
 - [📂 Directory Structure](#-directory-structure)
 - [🧠 Future Improvements](#-future-improvements)
-- [🎍 Preliminary judging slide](#preliminary-judging-slide)
+- [🎍 Preliminary judging slides](#preliminary-judging-slide)
 - [📸 Snapshots](#-snapshots)
+- [▶️ Demo Video](#-Demo-Video)
 - [📚 Citations & References](#-citations--references)
 
 
@@ -219,7 +220,7 @@ Transcribed [recorded_audio_2.wav]: 翻回主界面
 Predicted intent: back
 ```
 
-## ▶️ Demo
+## ▶️ Demo Video
 
 [DAX Assistant Demo Team Pikachu (UM Hackathon 2025)](snapshots%2FDAX%20Assistant%20Demo%20Team%20Pikachu%20%28UM%20Hackathon%202025%29.webm)
 
