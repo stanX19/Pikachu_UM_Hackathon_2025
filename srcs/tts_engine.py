@@ -48,7 +48,7 @@ def synthesize_and_play(text, lang="en"):
     voice = lang_map.get(lang.lower(), "en-US-GuyNeural")
 
     # Create a unique filename with absolute path
-    data_dir = os.path.abspath("./data")
+    data_dir = os.path.abspath("data")
     os.makedirs(data_dir, exist_ok=True)
     output_path = os.path.join(data_dir, f"output_{uuid.uuid4().hex}.mp3")
 
