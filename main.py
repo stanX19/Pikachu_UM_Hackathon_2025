@@ -15,6 +15,7 @@ from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, QPushButton, QM
                              QLabel, QStackedLayout, QHBoxLayout, QSizePolicy, QFrame, QGridLayout)
 from PyQt5.QtCore import QThread, pyqtSignal, Qt, QSize, QTimer
 from PyQt5.QtGui import QFont, QIcon
+import noisereduce
 
 # Constants
 SAVE_DIR = './data'
@@ -198,6 +199,37 @@ class AudioUtils:
 
         return audio_data[start_sample:end_sample]
 
+    @staticmethod
+    def apply_noise_reduction(audio_data: np.ndarray, sample_rate: int) -> np.ndarray:
+        """Apply noise reduction to the audio data."""
+        try:
+
+            # Use the first 0.5 seconds of audio as noise profile if available
+            noise_sample_length = min(int(0.5 * sample_rate), len(audio_data) // 4)
+
+            if noise_sample_length > 0:
+                # Use the beginning portion of audio as noise profile
+                noise_sample = audio_data[:noise_sample_length]
+                reduced_audio = noisereduce.reduce_noise(
+                    y=audio_data,
+                    sr=sample_rate,
+                    y_noise=noise_sample,
+                    prop_decrease=1.00,
+                    stationary=True
+                )
+            else:
+                # If audio is too short, use statistical noise reduction
+                reduced_audio = noisereduce.reduce_noise(
+                    y=audio_data,
+                    sr=sample_rate,
+                    stationary=False
+                )
+
+            return reduced_audio
+        except Exception as e:
+            print(f"Noise reduction error: {e}")
+            return audio_data  # Return original if noise reduction fails
+
 
 class VoiceActivityDetector:
     """Handles voice activity detection using webrtcvad."""
@@ -223,7 +255,7 @@ class AudioRecorder(QThread):
         super().__init__()
         self.file_index = file_index
         self.vad = VoiceActivityDetector()
-        self.buffer = collections.deque()
+        self.buffer = collections.deque(maxlen=16)  # Buffer for noise reduction
         self.running = True
         self.audio_queue = queue.Queue()
 
@@ -253,14 +285,18 @@ class AudioRecorder(QThread):
             self.finished.emit(Exception(f"Recording failed: {str(e)}"))
 
     def _process_audio_stream(self):
-        """Process incoming audio data and detect speech segments."""
+        """Process incoming audio data with noise reduction and then VAD."""
         silent_chunks = 0
         voiced_chunks = 0
+        max_voiced_chunks = 0
         collected_frames = []
         is_speech_frames = []  # Track which frames contain speech
         max_silence_chunks = int(SILENCE_TIMEOUT * 1000 / FRAME_DURATION)
 
         speech_started = False
+
+        # Keep a sliding window of recent frames for noise profile
+        noise_profile_frames = []
 
         while self.running:
             try:
@@ -268,39 +304,85 @@ class AudioRecorder(QThread):
             except queue.Empty:
                 continue
 
-            is_speech = self.vad.is_speech(frame, SAMPLE_RATE)
+            # Add to sliding window of recent frames (for noise profile)
+            noise_profile_frames.append(frame)
+            if len(noise_profile_frames) > 8:  # Keep last ~240ms for noise profile
+                noise_profile_frames.pop(0)
+
+            # Convert current frame to numpy for noise reduction
+            frame_np = np.frombuffer(frame, dtype='int16')
+
+            # Only apply noise reduction if we have enough frames for a profile
+            if len(noise_profile_frames) >= 4:
+                try:
+                    # Create noise profile from first few frames in the window
+                    noise_profile = np.frombuffer(b''.join(noise_profile_frames[:3]), dtype='int16')
+
+                    # Apply noise reduction to current frame
+                    reduced_frame_np = noisereduce.reduce_noise(
+                        y=frame_np,
+                        sr=SAMPLE_RATE,
+                        y_noise=noise_profile,
+                        prop_decrease=1.00,
+                        stationary=False
+                    )
+
+                    # Convert back to int16 if needed
+                    if reduced_frame_np.dtype != np.int16:
+                        reduced_frame_np = (reduced_frame_np * 32767).astype(np.int16)
+
+                    # Convert back to bytes for VAD
+                    reduced_frame = reduced_frame_np.tobytes()
+                except Exception as e:
+                    print(f"Noise reduction error on frame: {e}")
+                    reduced_frame = frame  # Fall back to original frame
+            else:
+                reduced_frame = frame  # Not enough frames for noise profile yet
+
+            # Apply VAD to the noise-reduced frame
+            is_speech = self.vad.is_speech(reduced_frame, SAMPLE_RATE)
             is_speech_frames.append(is_speech)
 
             if is_speech and not speech_started:
                 speech_started = True
 
-            collected_frames.append(frame)
+            # Store the noise-reduced frame
+            collected_frames.append(reduced_frame)
 
             if is_speech:
                 silent_chunks = 0
                 voiced_chunks += 1
+                max_voiced_chunks = max(max_voiced_chunks, voiced_chunks)
             else:
+                voiced_chunks = 0
                 silent_chunks += 1
 
             # If we've detected speech and then sufficient silence, stop recording
-            if voiced_chunks > 5 and silent_chunks > max_silence_chunks:
+            if max_voiced_chunks > 10 and silent_chunks > max_silence_chunks:
                 break
 
-        self._save_audio_if_speech_detected(collected_frames, is_speech_frames, voiced_chunks)
+        self._save_audio_if_speech_detected(collected_frames, is_speech_frames, max_voiced_chunks)
 
-    def _save_audio_if_speech_detected(self, collected_frames, is_speech_frames, voiced_chunks):
+    def _save_audio_if_speech_detected(self, collected_frames, is_speech_frames, max_voiced_chunks):
         """Save the recorded audio if speech was detected, trimming silence from both ends."""
-        if voiced_chunks <= 5:
+        if max_voiced_chunks <= 10:
             self.finished.emit("No speech detected")
             return
 
         try:
-            # Convert to numpy array
+            # Convert noise-reduced frames to numpy array
             audio_data = b''.join(collected_frames)
             audio_np = np.frombuffer(audio_data, dtype='int16')
 
             # Trim silence from both ends
             trimmed_audio = AudioUtils.trim_silence(audio_np, is_speech_frames)
+
+            # Additional check for minimum duration
+            min_duration_samples = SAMPLE_RATE * 0.3  # at least 0.3 seconds
+            if len(trimmed_audio) < min_duration_samples:
+                print("Audio too short after trimming silence")
+                self.finished.emit("Audio too short")
+                return
 
             # Save to file
             file_path = AudioUtils.get_next_filename(self.file_index)
@@ -314,7 +396,7 @@ class AudioRecorder(QThread):
 class TranscriptionEngine:
     """Handles speech-to-text transcription using Whisper."""
 
-    def __init__(self, model_name: str = "base.en"):
+    def __init__(self, model_name: str = "base"):
         """Initialize the transcription engine with the specified model."""
         self.model = None
         self.model_name = model_name
@@ -581,7 +663,7 @@ class PageWidget(QWidget):
         layout.addWidget(title_label)
 
         # Content area - just a placeholder message
-        content_label = QLabel(f"{self.title} Page Content")
+        content_label = QLabel(f"{self.title} Page Content\nto be developed...")
         content_label.setWordWrap(True)
         content_label.setAlignment(Qt.AlignCenter)
         content_label.setStyleSheet(f"""
@@ -676,8 +758,8 @@ class VoiceControlPrototypeApp(QWidget):
         # Create the 2x2 grid buttons with our custom GridButton class
         self.nav_button = GridButton("Navigation", self.normal_theme["nav_btn"])
         self.accept_button = GridButton("Accept Order", self.normal_theme["accept_btn"])
-        self.chat_button = GridButton("Chat with Passenger", self.normal_theme["chat_btn"])
-        self.fetched_button = GridButton("Fetched Passenger", self.normal_theme["fetched_btn"])
+        self.chat_button = GridButton("Chat with\nPassenger", self.normal_theme["chat_btn"])
+        self.fetched_button = GridButton("Fetched\nPassenger", self.normal_theme["fetched_btn"])
 
         # Group our grid buttons for easy theming
         self.grid_buttons = {
@@ -688,7 +770,8 @@ class VoiceControlPrototypeApp(QWidget):
         }
 
         # Connect button clicks
-        self.nav_button.clicked.connect(lambda: self.navigate_to_page("Navigation", self.normal_theme["nav_btn"]))
+        self.nav_button.clicked.connect(
+            lambda: self.navigate_to_page("Navigation", self.normal_theme["nav_btn"]))
         self.accept_button.clicked.connect(
             lambda: self.navigate_to_page("Accept Order", self.normal_theme["accept_btn"]))
         self.chat_button.clicked.connect(
@@ -843,6 +926,9 @@ class VoiceControlPrototypeApp(QWidget):
         }
 
         # Execute the action if the intent is recognized
+        if self.current_page != "home" and intent != "unknown":
+            self.navigate_back()
+
         if intent in intent_to_action:
             intent_to_action[intent]()
             return True
