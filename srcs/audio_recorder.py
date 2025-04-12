@@ -12,7 +12,7 @@ from PyQt5.QtCore import QThread, pyqtSignal
 from scipy.io.wavfile import write
 
 
-SAVE_DIR = './data'
+SAVE_DIR = 'data'
 SAMPLE_RATE = 32000
 FRAME_DURATION = 30  # ms, can only be 10, 20 or 30
 FRAME_SIZE = int(SAMPLE_RATE * FRAME_DURATION / 1000)
