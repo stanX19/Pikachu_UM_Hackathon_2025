@@ -126,7 +126,10 @@ class AudioRecorder(QThread):
         """Callback for sounddevice InputStream."""
         if status:
             print(f"Stream status: {status}", file=sys.stderr)
-        self.audio_queue.put(bytes(indata))
+        try:
+            self.audio_queue.put(bytes(indata))
+        except Exception as e:
+            print(f"AudioRecorder: callback: {e}")
 
     def stop(self):
         """Stop the recording thread."""

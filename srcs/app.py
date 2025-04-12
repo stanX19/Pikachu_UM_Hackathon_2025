@@ -406,7 +406,7 @@ class VoiceControlPrototypeApp(QWidget):
             "navigation": self.nav_button,
             "accept_order": self.accept_button,
             "chat_passenger": self.chat_button,
-            "fetched_passenger": self.fetched_button
+            "i_have_fetched_passenger": self.fetched_button
         }
 
         # Connect button clicks
@@ -560,9 +560,9 @@ class VoiceControlPrototypeApp(QWidget):
             "navigation": lambda: self.navigate_to_page("Navigation", self.normal_theme["nav_btn"]),
             "accept_order": lambda: self.navigate_to_page("Accept Order", self.normal_theme["accept_btn"]),
             "chat_passenger": lambda: self.navigate_to_page("Chat with Passenger", self.normal_theme["chat_btn"]),
-            "fetched_passenger": lambda: self.navigate_to_page("Fetched Passenger", self.normal_theme["fetched_btn"]),
+            "i_have_fetched_passenger": lambda: self.navigate_to_page("Fetched Passenger", self.normal_theme["fetched_btn"]),
             "exit_voice_mode": self.exit_voice_mode,
-            "back": self.navigate_back
+            "back_to_menu": self.navigate_back
         }
 
         if intent == "none":
@@ -588,7 +588,7 @@ class VoiceControlPrototypeApp(QWidget):
                 self.record_next()
         else:
             # Recording successful; process the file with the transcription engine.
-            self.status_label.setText(f"Processing: {os.path.basename(result)}")
+            self.status_label.setText(f"Processing...")
             self.file_counter += 1
             self.transcription_processor.add_file(result)
 
@@ -598,7 +598,7 @@ class VoiceControlPrototypeApp(QWidget):
     def on_transcription_ready(self, file_path, text):
         """Display the transcription result and predict intent for the recorded audio."""
         file_name = os.path.basename(file_path)
-        self.status_label.setText(f"Transcribed: {file_name}")
+        self.status_label.setText(f"Transcribed")
         self.transcription_label.setText(text)
 
         # Predict intent from the transcription

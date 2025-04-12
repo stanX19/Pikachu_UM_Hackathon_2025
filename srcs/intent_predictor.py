@@ -12,10 +12,11 @@ class IntentPredictor:
         "navigation",
         "accept_order",
         "chat_passenger",
-        "fetched_passenger",
+        "i_have_fetched_passenger",
         "exit_voice_mode",
-        "back",
+        "back_to_menu",
         "testing"
+        "question"
     ]
 
     system_prompts = {"English": f"""
@@ -192,6 +193,7 @@ class IntentPredictor:
             "zh-tw": "Chinese",
             "ko": "Chinese",
             "ms": "Malay",
+            "id": "Malay",
             "en": "English"
         }
         return language_map.get(detected_language, None)
@@ -203,13 +205,13 @@ class IntentPredictor:
         language_code = langdetect.detect(text)
         language = IntentPredictor.map_language(language_code)
         if language is None:
-            return "none"
+            return "none2"
         response = re.sub("\n+", "\n", cls.get_llm_response(text, language)).strip()
         # Match to a known intent
         lines = response.split("\n")
         last_line = lines[-1]
         if "noise" in last_line:
-            return "none"
+            return "none3"
 
         tts_engine.synthesize_and_play("\n".join(lines[:-1]), language_code)
         for intent in cls.INTENTS:

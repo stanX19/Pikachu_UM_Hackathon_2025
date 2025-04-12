@@ -177,6 +177,10 @@ Transcribed [recorded_audio_2.wav]: 翻回主界面
 Predicted intent: back
 ```
 
+## ▶️ Demo
+
+[DAX Assistant Demo Team Pikachu (UM Hackathon 2025).mp4](snapshots%2FDAX%20Assistant%20Demo%20Team%20Pikachu%20%28UM%20Hackathon%202025%29.mp4)
+
 ## 📚 Citations & References
 
 This project builds upon a wide array of open-source tools, models, and libraries. We gratefully acknowledge the following:

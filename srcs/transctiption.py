@@ -21,12 +21,34 @@ class TranscriptionEngine:
             except Exception as e:
                 raise Exception(f"Failed to load Whisper model: {str(e)}")
 
+    def correct_common_error(self, transcribed_text):
+        errors = {
+            "高速": "告诉",
+            "到處": "告诉",
+            "倒速": "告诉",
+            "到速": "告诉",
+            "倒数": "告诉",
+            "成課": "乘客",
+            "成课": "乘客",
+            "成個": "乘客",
+            "成刻": "乘客",
+            "雨嬰": "语音",
+            "余音": "语音",
+            "王室": "模式",
+            "捷克": "接客",
+            "goita": "kereta",
+        }
+        for incorrect, correct in errors.items():
+            transcribed_text = transcribed_text.replace(incorrect, correct)
+        return transcribed_text
+
     def transcribe(self, audio_file: str) -> str:
         """Transcribe the audio file to text."""
         try:
             self.load_model()
             result = self.model.transcribe(audio_file, fp16=False)
-            return result.get("text", "").strip()
+            text = result.get("text", "").strip()
+            return self.correct_common_error(text)
         except Exception as e:
             raise Exception(f"Transcription error: {str(e)}")
 

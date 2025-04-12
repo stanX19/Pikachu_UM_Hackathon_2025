@@ -9,7 +9,7 @@ class IntentPredictor:
         "navigation",
         "accept_order",
         "chat_passenger",
-        "fetched_passenger",
+        "i_have_fetched_passenger",
         "exit_voice_mode"
     ]
 
@@ -53,7 +53,7 @@ if __name__ == "__main__":
         "Can you take me downtown?",  # Likely navigation
         "Accept the ride request",    # Likely accept_order
         "Say hi to the customer",     # Likely chat_passenger
-        "I have the passenger in my car",  # Likely fetched_passenger
+        "I have the passenger in my car",  # Likely i_have_fetched_passenger
         "End voice mode now",         # Likely exit_voice_mode
         "Open the sunroof"             # Likely unknown
     ]
