@@ -33,7 +33,8 @@ Drivers currently rely on manual input or screen-based interfaces, which are uns
 
 ## 🧩 Architecture
 ```
-Voice Input → [Noise Reduction + VAD] → Whisper Transcription → → Language Detection → LLM Intent Classification → → UI Navigation / Voice Feedback (Edge-TTS)
+Voice Input → [Noise Reduction + VAD] → Whisper Transcription →→
+Language Detection → LLM Intent Classification → → UI Navigation / Voice Feedback (Edge-TTS)
 ```
 
 
@@ -61,14 +62,6 @@ Voice Input → [Noise Reduction + VAD] → Whisper Transcription → → Langua
 - **Multilingual Prompt Templates** for language-specific intent grounding
 - **Colloquial Slang & Accent Adaptability** (via LLM prompt tuning)
 
-## 🌍 Environmental Resilience
-
-Tested under:
-- 🚦 Urban noise & engine rumble
-- 🌧️ Rain & wind simulations
-- 🔊 High-traffic scenarios (80–90 dB)
-- 🇲🇾 Regional accents & speech quirks
-
 ## 🎥 Demo
 
 A short demo video is included to illustrate:
@@ -76,6 +69,8 @@ A short demo video is included to illustrate:
 - Intent recognition
 - Multilingual feedback
 - UI transitions & safety logic
+
+[link to video]
 
 ## 🚀 Getting Started
 
