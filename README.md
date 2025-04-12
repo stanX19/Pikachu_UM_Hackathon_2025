@@ -8,6 +8,7 @@ UM Hackathon 2025 Prototype presented by team Pikachu
 - [🎯 Problem Statement](#-problem-statement)
 - [✨ Features](#-features)
 - [🧩 Architecture](#-architecture)
+- [🐳 Data utilization](#data-utilization)
 - [🏗️ Modules](#-modules)
 - [🧪 Key Technologies](#-key-technologies)
 - [🧠 AI Intelligence](#-ai-intelligence)
@@ -19,6 +20,7 @@ UM Hackathon 2025 Prototype presented by team Pikachu
 - [🛡️ Safety & Ethics](#-safety--ethics)
 - [📂 Directory Structure](#-directory-structure)
 - [🧠 Future Improvements](#-future-improvements)
+- [🎍 Preliminary judging slide](#preliminary-judging-slide)
 - [📸 Snapshots](#-snapshots)
 - [📚 Citations & References](#-citations--references)
 
@@ -58,6 +60,7 @@ Voice Input → [Noise Reduction + VAD] → Whisper Transcription →→
 Language Detection → LLM Intent Classification → → UI Navigation / Voice Feedback (Edge-TTS)
 ```
 
+## 🐳 Data utilization
 
 ## 🏗️ Modules
 
@@ -136,7 +139,7 @@ srcs
 ## 🎍Preliminary judging slide
 Below is pikachu team pitch slide
 
-[Click here]([https://example.com](https://www.canva.com/design/DAGkPnz2ny4/xnMEmnuYzi3iPQLp8Jgu3Q/edit?utm_content=DAGkPnz2ny4&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton))
+[Click here](https://www.canva.com/design/DAGkPnz2ny4/xnMEmnuYzi3iPQLp8Jgu3Q/edit?utm_content=DAGkPnz2ny4&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)
 
 
 ## 🧠 Future Improvements
