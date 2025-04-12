@@ -8,6 +8,8 @@ UM Hackathon 2025 Prototype presented by team Pikachu
 - [🎯 Problem Statement](#-problem-statement)
 - [✨ Features](#-features)
 - [🧩 Architecture](#-architecture)
+- [🐳 Data Utilization](#-data-utilization)
+- [🐼Personalization Strategies](#-personalization-strategies)
 - [🏗️ Modules](#-modules)
 - [🧪 Key Technologies](#-key-technologies)
 - [🧠 AI Intelligence](#-ai-intelligence)
@@ -19,6 +21,7 @@ UM Hackathon 2025 Prototype presented by team Pikachu
 - [🛡️ Safety & Ethics](#-safety--ethics)
 - [📂 Directory Structure](#-directory-structure)
 - [🧠 Future Improvements](#-future-improvements)
+- [🎍 Preliminary judging slide](#preliminary-judging-slide)
 - [📸 Snapshots](#-snapshots)
 - [📚 Citations & References](#-citations--references)
 
@@ -58,7 +61,40 @@ Voice Input → [Noise Reduction + VAD] → Whisper Transcription →→
 Language Detection → LLM Intent Classification → → UI Navigation / Voice Feedback (Edge-TTS)
 ```
 
+## 🐳 Data Utilization
+Current prototype does not yet implement data integration, however the team had implemented Large Language Models (LLMs) in a way to achieve data utilization for intelligent, real-time data usage.
 
+i. Real-Time Context Awareness
+LLMs can interpret live trip data—such as ride status, location, and traffic patterns—to generate contextually smart responses. For example, Grab driver could say:
+```commandline
+“Are there any heavy traffic within 1km?”
+or
+“You’ve just accepted a ride. Want to open navigation now?”
+```
+ii. 📌 Dynamic Command Handling
+As LLMs are flexible with natural language input, they can handle a wide variety of voice commands without needing pre-set phrases. Drivers can speak naturally with native tones, and the assistant will still understand based on context.
+
+iii. 📊 Driver Behavior Insights
+LLMs can learn from historical driver behavior data to optimize workflow including predicting driver prefers to take breaks or proactively offering to toggle for instance Do Not Disturb when a ride starts.
+
+## 🐼Personalization Strategies
+By securely storing and referencing past driver conversations, it can offer deep personalization with LLMs in the loop—adapting responses and actions based on individual usage patterns.
+
+i. Conversational Memory🗣️ 
+With stored interactions, model can “remember” preferences over time:
+```commandline
+“You usually prefer Waze for navigation—opening it now.”
+or
+“Last time you muted the passenger chat while driving—should I do that again?”
+```
+ii. Tone and Style Adaptation📚
+LLMs can fine-tune the assistant’s voice and tone to match the driver's style whether more casual, efficient or friendly—making the experience feel more natural and human-like.
+
+iii. Custom Workflow Shortcuts🛠️
+By learning from past commands, it can offer personalized shortcuts or automations:
+```commandline
+“You often accept back-to-back rides want me to auto-accept the next one?”
+```
 ## 🏗️ Modules
 
 | Module | Description |
@@ -132,6 +168,12 @@ srcs
 ├── tts_engine.py             # Edge-TTS for feedback
 └── data/                     # Recorded audio + TTS outputs
 ```
+
+## 🎍Preliminary judging slide
+Below is pikachu team pitch slide
+
+[Click here](https://www.canva.com/design/DAGkPnz2ny4/xnMEmnuYzi3iPQLp8Jgu3Q/edit?utm_content=DAGkPnz2ny4&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)
+
 
 ## 🧠 Future Improvements
 
