@@ -11,12 +11,12 @@ class IntentPredictor:
     INTENTS = [
         "navigation",
         "accept_order",
-        "chat_passenger",
+        "chat_with_passenger",
         "i_have_fetched_passenger",
         "exit_voice_mode",
         "back_to_menu",
-        "testing"
-        "question"
+        "test_microphone",
+        "chat_with_grab_assistant(you)"
     ]
 
     system_prompts = {"English": f"""

@@ -405,7 +405,7 @@ class VoiceControlPrototypeApp(QWidget):
         self.grid_buttons = {
             "navigation": self.nav_button,
             "accept_order": self.accept_button,
-            "chat_passenger": self.chat_button,
+            "chat_with_passenger": self.chat_button,
             "i_have_fetched_passenger": self.fetched_button
         }
 
@@ -559,7 +559,7 @@ class VoiceControlPrototypeApp(QWidget):
         intent_to_action = {
             "navigation": lambda: self.navigate_to_page("Navigation", self.normal_theme["nav_btn"]),
             "accept_order": lambda: self.navigate_to_page("Accept Order", self.normal_theme["accept_btn"]),
-            "chat_passenger": lambda: self.navigate_to_page("Chat with Passenger", self.normal_theme["chat_btn"]),
+            "chat_with_passenger": lambda: self.navigate_to_page("Chat with Passenger", self.normal_theme["chat_btn"]),
             "i_have_fetched_passenger": lambda: self.navigate_to_page("Fetched Passenger", self.normal_theme["fetched_btn"]),
             "exit_voice_mode": self.exit_voice_mode,
             "back_to_menu": self.navigate_back
