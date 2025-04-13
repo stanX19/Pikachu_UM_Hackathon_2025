@@ -21,7 +21,7 @@ UM Hackathon 2025 Prototype presented by team Pikachu
 - [🛡️ Safety & Ethics](#-safety--ethics)
 - [📂 Directory Structure](#-directory-structure)
 - [🧠 Future Improvements](#-future-improvements)
-- [🎍 Preliminary judging slides](#preliminary-judging-slide)
+- [🎍 Preliminary Judging](#preliminary-judging)
 - [📸 Snapshots](#-snapshots)
 - [📚 Citations & References](#-citations--references)
 
@@ -172,7 +172,7 @@ srcs
 ## 🎍Preliminary Judging 
 Below is pikachu team pitch slide
 
-[Click here](https://www.canva.com/design/DAGkPnz2ny4/xnMEmnuYzi3iPQLp8Jgu3Q/edit?utm_content=DAGkPnz2ny4&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)]
+[Click here]
 
 
 ## 🧠 Future Improvements
